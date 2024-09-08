@@ -15,7 +15,7 @@ enum tileSkin {
 	WATER
 };
 struct vertice {
-	short y;
+	short y = -1;
 	tileSkin tileType;
 };
 
@@ -50,8 +50,8 @@ public:
 
 	const int rngtop = 1000;
 
-	const int down = 1 * rngtop/100;
-	const int stay = 5 * rngtop/100;
+	const int down = 10 * rngtop/100;
+	const int stay = 25 * rngtop/100;
 	const int up   = 100 * rngtop/100;
 	
 	// h * height + w
@@ -69,86 +69,34 @@ public:
 		short lowest = capHeight;
 		//lowest = ((((y - 1) * height + (x - 1)) >= 0) * (((y - 1) * height + (x - 1)) < allVertices.size())) * (allVertices[(y - 1) * height + (x - 1)].y)
 
-		{
-			const int v = (y - 1) * height + (x - 1);
+		int dx[8] = {-1,-1,-1, 0, 0,  1, 1, 1};
+		int dy[8] = { -1, 0, 1,-1, 1, -1, 0, 1 };
+		
+		for (int i = 0; i < 8; i++) {
+			const int v = dy[i] * height + dx[i];
 			if (v >= 0 && v < allVertices.size()) {
 				const int val = allVertices[v].y;
-				if (val < lowest) {
+				if (val < lowest && val != -1) {
 					lowest = val;
+				
+				}
+				else {
+					//std::cout << val << '\n';
 				}
 			}
 		}
-		{
-			const int v = (y - 1) * height + (x);
-			if (v >= 0 && v < allVertices.size()) {
-				const int val = allVertices[v].y;
-				if (val < lowest) {
-					lowest = val;
-				}
-			}
-		}
-		{
-			const int v = (y - 1) * height + (x + 1);
-			if (v >= 0 && v < allVertices.size()) {
-				const int val = allVertices[v].y;
-				if (val < lowest) {
-					lowest = val;
-				}
-			}
-		}
-		{
-			const int v = (y) * height + (x - 1);
-			if (v >= 0 && v < allVertices.size()) {
-				const int val = allVertices[v].y;
-				if (val < lowest) {
-					lowest = val;
-				}
-			}
-		}
-		{
-			const int v = (y) * height + (x + 1);
-			if (v >= 0 && v < allVertices.size()) {
-				const int val = allVertices[v].y;
-				if (val < lowest) {
-					lowest = val;
-				}
-			}
-		}
-		{
-			const int v = (y + 1) * height + (x - 1);
-			if (v >= 0 && v < allVertices.size()) {
-				const int val = allVertices[v].y;
-				if (val < lowest) {
-					lowest = val;
-				}
-			}
-		}
-		{
-			const int v = (y + 1) * height + (x);
-			if (v >= 0 && v < allVertices.size()) {
-				const int val = allVertices[v].y;
-				if (val < lowest) {
-					lowest = val;
-				}
-			}
-		}
-		{
-			const int v = (y + 1) * height + (x + 1);
-			if (v >= 0 && v < allVertices.size()) {
-				const int val = allVertices[v].y;
-				if (val < lowest) {
-					lowest = val;
-				}
-			}
+		if (lowest == capHeight) {
+			lowest = 0;
+			std::cout << x << ';' << y << " all unit\n";
 		}
 		return lowest;
 	}
 
 	short solveVertHeight(const int x, const int y) {
 		const short lowest = solveLowestVertice(x, y);
-
+		const double heightPercent = (3*lowest) / capHeight + 1;
 		const short random = randomShort(0, rngtop);
-		const short b = ((random <= down) * -1) + ((random > stay) * 1);
+		const short b = (((random <= down)*heightPercent) * -1) + (((random > stay)*heightPercent) * 1);
 		const short nRes = (b + lowest);
 
 		// Ensure nRes is within the valid range
@@ -160,28 +108,30 @@ public:
 			res = capHeight;
 		}
 
-		frequencyCount[lowest] += 1;
+		frequencyCount[res] += 1;
 
 		// Debug output
-		std::cout << "x: " << x << ", y: " << y << ", random: " << random << ", b: " << b << ", nRes: " << nRes << ", res: " << res << ", lowest" << lowest << std::endl;
+		//std::cout << "x: " << x << ", y: " << y << ", random: " << random << ", b: " << b << ", nRes: " << nRes << ", res: " << res << ", lowest" << lowest << std::endl;
 
 		return res;
 	}
 
-	void generateHeights() {
-		for (size_t y = 0; y < height; y++)
-		{
-			for (size_t x = 0; x < width; x++)
+	void generateHeights(const int passes) {
+		for (size_t p = 0; p < passes; p++) {
+			for (size_t y = 0; y < height; y++)
 			{
-				allVertices[y * height + x].y = solveVertHeight(x, y);
-				//std::cout << y * height + x << '\n';
+				for (size_t x = 0; x < width; x++)
+				{
+					allVertices[y * height + x].y = solveVertHeight(x, y);
+					//std::cout << y * height + x << '\n';
+				}
 			}
-		}
 
-		for (const auto& the : frequencyCount) {
-			std::cout << the.first << ':' << the.second << '\n';
+			for (const auto& the : frequencyCount) {
+				std::cout << the.first << ':' << the.second << '\n';
+			}
+			std::cout << down << ':' << stay << ':' << up << '\n';
 		}
-		std::cout << down << ':' << stay << ':' << up << '\n';
 	}
 	
 	void printRawData() {
@@ -213,7 +163,7 @@ public:
 				Uint32* pixel = pixels + y * pitch + x;
 
 				// Modify the pixel value
-				const Uint8 v = 255 / (capHeight / 10) * allVertices[y * height + x].y;
+				const Uint8 v = 255 / capHeight * allVertices[y * height + x].y;
 				Uint8 r = v;
 				Uint8 g = v;
 				Uint8 b = v;
