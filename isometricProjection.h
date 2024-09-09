@@ -131,20 +131,33 @@ public:
 		}
 
 		// blend the pixels
-		const int dx[9] = { -1,0,1,-1,0,1,-1,0,1 };
-		const int dy[9] = { -1,-1,-1,0,0,0,1,1,1 };
+		const int dx[25] = { -2, -1, 0 , 1,2,-2, -1, 0 , 1,2,-2, -1, 0 , 1,2,-2, -1, 0 , 1,2,-2, -1, 0 , 1,2,-2, -1, 0 , 1,2 };
+		const int dy[25] = {-2,-2,-2,-2,-2,-1,-1,-1,-1,-1,0,0,0,0,0,1,1,1,1,1,2,2,2,2,2 };
+
+		std::vector<double> tempHeights;
+		tempHeights.resize(allVertices.size());
 		for (int y = 0; y < height; y++) {
 			for (int x = 0; x < width; x++) {
 				double avHeight = 0;
-				for (int i = 0; i < 9; i++) {
+				short valid = 0;
+				for (int i = 0; i < 25; i++) {
 					const int toCheck = (y + dy[i]) * width + (x + dx[i]);
 					if (toCheck >= 0 && toCheck < allVertices.size()) {
 						avHeight += allVertices[toCheck].y;
+						valid++;
 					}
 
 				}
+				tempHeights[y * width + x] = avHeight/valid;
 			}
 		}
+		//apply the blends
+		for (int y = 0; y < height; y++) {
+			for (int x = 0; x < width; x++) {
+				allVertices[y * width + x].y = tempHeights[y * width + x];
+			}
+		}
+		
 		for (auto& vert : allVertices) {
 			double avHeight = 0;
 			for (int i = 0; i < 9; i++) {
