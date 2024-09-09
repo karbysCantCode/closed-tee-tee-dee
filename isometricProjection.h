@@ -3,6 +3,7 @@
 #include "Vector2.h"
 #include <array>
 #include <random>
+#include <cmath>
 
 #include <map>
 
@@ -15,7 +16,7 @@ enum tileSkin {
 	WATER
 };
 struct vertice {
-	short y = -1;
+	int y = -1;
 	tileSkin tileType;
 };
 
@@ -48,12 +49,40 @@ T abs(T a) {
 }
 
 class vertMap {
+private:
+	int solveLowestVertice(const int x, const int y) {
+		int lowest = capHeight;
+		//lowest = ((((y - 1) * height + (x - 1)) >= 0) * (((y - 1) * height + (x - 1)) < allVertices.size())) * (allVertices[(y - 1) * height + (x - 1)].y)
+
+		int dx[8] = { -1,-1,-1, 0, 0,  1, 1, 1 };
+		int dy[8] = { -1, 0, 1,-1, 1, -1, 0, 1 };
+
+		for (int i = 0; i < 8; i++) {
+			const int v = dy[i] * height + dx[i];
+			if (v >= 0 && v < allVertices.size()) {
+				const int val = allVertices[v].y;
+				if (val < lowest && val != -1) {
+					lowest = val;
+
+				}
+				else {
+					//std::cout << val << '\n';
+				}
+			}
+		}
+		if (lowest == capHeight) {
+			lowest = 0;
+			//std::cout << x << ';' << y << " all unit\n";
+		}
+		return lowest;
+	}
 public:
 	int width, height;
+	int top = 0;
 	const int capHeight = 255;
 	
-	// h * height + w
-	// y * height + x
+	// h * width + w
+	// y * width + x
 	// where x is wrapped under y
 	std::vector<vertice> allVertices;
 
@@ -65,40 +94,37 @@ public:
 
 	
 
-	void generateHeights(const int passes) {
-		std::vector<vector2<float>> vertVectors2;
-		vertVectors2.resize(height * width + width);
+	void generateHeights(const int mountainSeeds) {
+		const double scrnDiag = sqrt(width * width + height * height);
+		std::vector<vector3<int>> seededPositions;
+		seededPositions.resize(mountainSeeds);
+		
+		for (auto& vec : seededPositions) {
+			vec = vector3<int>(randomNumber<int>(0, width), randomNumber<int>(0, height),randomNumber<int>(0, capHeight));
+			vec.output();
+		}
+		
+		for (int y = 0; y < height; y++) {
+			for (int x = 0; x < width; x++) {
+				double totalSquared = 0;
+				for (const auto& vec : seededPositions) {
+					const double a = abs<double>(x - vec.x);
+					const double b = abs<double>(y - vec.y);
 
+					totalSquared += sqrt(a * a + b * b);
+				}
+				totalSquared /= mountainSeeds;
+				totalSquared /= 5;
+				const int yAxis = static_cast<int>(totalSquared);
+				allVertices[y * width + x].y = yAxis;
+				frequencyCount[yAxis] += 1;
 
-		// give each vert a vector2 pos
-		static const float max = 1;
-		static const float min = -1;
-		for (auto& vert : vertVectors2) {
-			vert = randomVector<float>(min, max, min, max);
+				top = (yAxis > top) ? yAxis : top;
+			}
 		}
 
-		for (int i = 0; i < height * width + width; i++) {
-			if (i % height == width - 1) {
-				//std::cout << (i % height) << '\n';
-				continue;
-			}
-			//std::cout << i << "\n";
-			short dx[4] = { 0,1,0,1 };
-			short dy[4] = { 0,0,1,1 };
-
-			const vector2<double> origin = (i + 0.5);
-			vector2<double> distance = 0;
-
-			for (short d = 0; d < 4; d++) {
-				distance += vector2<double>(abs<double>(vertVectors2[i + dx[d] + (dy[d] * height)].x - origin.x), abs<double>(vertVectors2[i + dx[d] + (dy[d] * height)].y - origin.y));
-			}
-			std::cout << "flag one" << "\n";
-			allVertices[i].y = (distance.x + distance.y) / 4;
-			std::cout << i << "\n";
-		}
-
-		for (const auto& vert : allVertices) {
-			std::cout << vert.y << '\n';
+		for (const auto& dub : frequencyCount) {
+			std::cout << dub.first << '=' << dub.second << '\n';
 		}
 	}
 	
@@ -131,7 +157,7 @@ public:
 				Uint32* pixel = pixels + y * pitch + x;
 
 				// Modify the pixel value
-				const Uint8 v = 255 / capHeight * allVertices[y * width + x].y;
+				const Uint8 v = allVertices[y * width + x].y;
 				Uint8 r = v;
 				Uint8 g = v;
 				Uint8 b = v;

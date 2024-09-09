@@ -11,8 +11,8 @@ int main(int argc, char* argv[])
 {
     std::cout << "Hello World!\n";
 
-    int screenX = 240;
-    int screenY = 400;
+    int screenX = 1200;
+    int screenY = 900;
 
     SDL_Window* window;
     SDL_Renderer* renderer;
@@ -51,8 +51,8 @@ int main(int argc, char* argv[])
         }
     }
 
-    vertMap map(120, 200);
-    map.generateHeights(150);
+    vertMap map(1200, 900);
+    map.generateHeights(500);
    // map.printRawData();
     SDL_Texture* texture = map.generateTexture(renderer);
     std::cout << "done!\n";
