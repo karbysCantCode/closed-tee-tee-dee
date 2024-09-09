@@ -94,37 +94,23 @@ public:
 
 	
 
-	void generateHeights(const int mountainSeeds) {
-		const double scrnDiag = sqrt(width * width + height * height);
-		std::vector<vector3<int>> seededPositions;
-		seededPositions.resize(mountainSeeds);
-		
-		for (auto& vec : seededPositions) {
-			vec = vector3<int>(randomNumber<int>(0, width), randomNumber<int>(0, height),randomNumber<int>(0, capHeight));
-			vec.output();
-		}
-		
-		for (int y = 0; y < height; y++) {
-			for (int x = 0; x < width; x++) {
-				double totalSquared = 0;
-				for (const auto& vec : seededPositions) {
-					const double a = abs<double>(x - vec.x);
-					const double b = abs<double>(y - vec.y);
+	void generateHeights(const int divFac) {
+		std::vector<vector2<double>> allVectors;
+		allVectors.resize((height / divFac) * (width / divFac) + (width / divFac));
 
-					totalSquared += sqrt(a * a + b * b);
-				}
-				totalSquared /= mountainSeeds;
-				totalSquared /= 5;
-				const int yAxis = static_cast<int>(totalSquared);
-				allVertices[y * width + x].y = yAxis;
-				frequencyCount[yAxis] += 1;
-
-				top = (yAxis > top) ? yAxis : top;
+		for (int y = 0; y < height / divFac; y++) {
+			for (int x = 0; x < width / divFac; x++) {
+				allVectors[y * (width / divFac) + x] = randomVector<double>(-1, 1, -1, 1) + vector2<double>(x,y);
 			}
 		}
 
-		for (const auto& dub : frequencyCount) {
-			std::cout << dub.first << '=' << dub.second << '\n';
+		for (int y = 0; y < height; y++) {
+			for (int x = 0; x < width; x++) {
+				const int divX = static_cast<int>(x / divFac);
+				const int divY = static_cast<int>(y / divFac);
+				const vector2<double> diff = (allVectors[divY * (width / divFac) + divX] * divFac) - vector2<double>(x, y);
+				allVertices[y * width + x].y = sqrt((diff.x * diff.x) + (diff.y * diff.y))*pow(divFac,2);
+			}
 		}
 	}
 	
