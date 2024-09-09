@@ -5,6 +5,7 @@
 #include "SDL.h"
 #include "TickRateMadeEasy.h"
 #include "isometricProjection.h"
+#include "Vector2.h"
 
 int main(int argc, char* argv[])
 {
@@ -50,7 +51,7 @@ int main(int argc, char* argv[])
         }
     }
 
-    vertMap map(120, 200, 10);
+    vertMap map(120, 200);
     map.generateHeights(150);
    // map.printRawData();
     SDL_Texture* texture = map.generateTexture(renderer);

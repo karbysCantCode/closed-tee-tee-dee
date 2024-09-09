@@ -1,10 +1,10 @@
 #pragma once
 #include "vector"
+#include "Vector2.h"
 #include <array>
 #include <random>
 
 #include <map>
-
 
 
 std::array<char, 31> asciiCharacters = { '.', ',', ':', ';', '-', '_', '=', '*', '+', '~', '/', '|', '\\', '\'', '\"', '^', '(', ')', '{', '}', '[', ']', '<', '>', '!', '?', '%', '@', '$', '&', '#' };
@@ -42,17 +42,15 @@ short randomShort(const short min, const short max) {
 	return dis(gen);
 }
 
+template<typename T>
+T abs(T a) {
+	return (a < 0) ? -a : a;
+}
+
 class vertMap {
 public:
 	int width, height;
-	int smoothness; // 0 - 100
 	const int capHeight = 255;
-
-	const int rngtop = 1000;
-
-	const int down = 10 * rngtop/100;
-	const int stay = 25 * rngtop/100;
-	const int up   = 100 * rngtop/100;
 	
 	// h * height + w
 	// y * height + x
@@ -61,76 +59,46 @@ public:
 
 	std::map<int, int> frequencyCount;
 
-	vertMap(const int w, const int h, const int smooth) : width(w), height(h), smoothness(smooth) {
-		allVertices.resize(height * height + width);
+	vertMap(const int w, const int h) : width(w), height(h) {
+		allVertices.resize(height * width + width);
 	}
 
-	short solveLowestVertice(const int x, const int y) {
-		short lowest = capHeight;
-		//lowest = ((((y - 1) * height + (x - 1)) >= 0) * (((y - 1) * height + (x - 1)) < allVertices.size())) * (allVertices[(y - 1) * height + (x - 1)].y)
-
-		int dx[8] = {-1,-1,-1, 0, 0,  1, 1, 1};
-		int dy[8] = { -1, 0, 1,-1, 1, -1, 0, 1 };
-		
-		for (int i = 0; i < 8; i++) {
-			const int v = dy[i] * height + dx[i];
-			if (v >= 0 && v < allVertices.size()) {
-				const int val = allVertices[v].y;
-				if (val < lowest && val != -1) {
-					lowest = val;
-				
-				}
-				else {
-					//std::cout << val << '\n';
-				}
-			}
-		}
-		if (lowest == capHeight) {
-			lowest = 0;
-			std::cout << x << ';' << y << " all unit\n";
-		}
-		return lowest;
-	}
-
-	short solveVertHeight(const int x, const int y) {
-		const short lowest = solveLowestVertice(x, y);
-		const double heightPercent = (3*lowest) / capHeight + 1;
-		const short random = randomShort(0, rngtop);
-		const short b = (((random <= down)*heightPercent) * -1) + (((random > stay)*heightPercent) * 1);
-		const short nRes = (b + lowest);
-
-		// Ensure nRes is within the valid range
-		short res = nRes;
-		if (res < 0) {
-			res = 0;
-		}
-		else if (res > capHeight) {
-			res = capHeight;
-		}
-
-		frequencyCount[res] += 1;
-
-		// Debug output
-		//std::cout << "x: " << x << ", y: " << y << ", random: " << random << ", b: " << b << ", nRes: " << nRes << ", res: " << res << ", lowest" << lowest << std::endl;
-
-		return res;
-	}
+	
 
 	void generateHeights(const int passes) {
-		for (size_t p = 0; p < passes; p++) {
-			for (size_t y = 0; y < height; y++)
-			{
-				for (size_t x = 0; x < width; x++)
-				{
-					allVertices[y * height + x].y = solveVertHeight(x, y);
-					//std::cout << y * height + x << '\n';
-				}
-			}
+		std::vector<vector2<float>> vertVectors2;
+		vertVectors2.resize(height * width + width);
 
-			for (const auto& the : frequencyCount) {
-				std::cout << the.first << ':' << the.second << '\n';
+
+		// give each vert a vector2 pos
+		static const float max = 1;
+		static const float min = -1;
+		for (auto& vert : vertVectors2) {
+			vert = randomVector<float>(min, max, min, max);
+		}
+
+		for (int i = 0; i < height * width + width; i++) {
+			if (i % height == width - 1) {
+				//std::cout << (i % height) << '\n';
+				continue;
 			}
-			std::cout << down << ':' << stay << ':' << up << '\n';
+			//std::cout << i << "\n";
+			short dx[4] = { 0,1,0,1 };
+			short dy[4] = { 0,0,1,1 };
+
+			const vector2<double> origin = (i + 0.5);
+			vector2<double> distance = 0;
+
+			for (short d = 0; d < 4; d++) {
+				distance += vector2<double>(abs<double>(vertVectors2[i + dx[d] + (dy[d] * height)].x - origin.x), abs<double>(vertVectors2[i + dx[d] + (dy[d] * height)].y - origin.y));
+			}
+			std::cout << "flag one" << "\n";
+			allVertices[i].y = (distance.x + distance.y) / 4;
+			std::cout << i << "\n";
+		}
+
+		for (const auto& vert : allVertices) {
+			std::cout << vert.y << '\n';
 		}
 	}
 	
@@ -139,7 +107,7 @@ public:
 		{
 			for (size_t x = 0; x < width; x++)
 			{
-				std::cout << asciiCharacters[allVertices[y * height + x].y] << " ";
+				std::cout << asciiCharacters[allVertices[y * width + x].y] << " ";
 			}
 			std::cout << "\n";
 		}
@@ -163,7 +131,7 @@ public:
 				Uint32* pixel = pixels + y * pitch + x;
 
 				// Modify the pixel value
-				const Uint8 v = 255 / capHeight * allVertices[y * height + x].y;
+				const Uint8 v = 255 / capHeight * allVertices[y * width + x].y;
 				Uint8 r = v;
 				Uint8 g = v;
 				Uint8 b = v;
