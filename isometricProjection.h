@@ -16,7 +16,7 @@ enum tileSkin {
 	WATER
 };
 struct vertice {
-	int y = -1;
+	double y = -1;
 	tileSkin tileType;
 };
 
@@ -96,20 +96,59 @@ public:
 
 	void generateHeights(const int divFac) {
 		std::vector<vector2<double>> allVectors;
-		allVectors.resize((height / divFac) * (width / divFac) + (width / divFac));
+		// leaving this at 2 works, at one it leaves a strange artifact in the bottom right, and at 0 it vector out of bounds
+		const int magicNumber = 2;
+		allVectors.resize((height / divFac + magicNumber) * (width / divFac + magicNumber) + (width / divFac + magicNumber));
 
-		for (int y = 0; y < height / divFac; y++) {
-			for (int x = 0; x < width / divFac; x++) {
+		for (int y = 0; y < height / divFac + magicNumber; y++) { // creat the vectors
+			for (int x = 0; x < width / divFac + magicNumber; x++) {
 				allVectors[y * (width / divFac) + x] = randomVector<double>(-1, 1, -1, 1) + vector2<double>(x,y);
 			}
 		}
 
+		// apply the influence of the vectors to the pixels
+		{
+			const int dx[4] = { 0,1,0,1 };
+			const int dy[4] = { 0,0,1,1 };
+			const double maxDiag = 2.82842712475; // sqrt(2*2+2*2)
+
+			for (int y = 0; y < height; y++) {
+				for (int x = 0; x < width; x++) {
+					double height = 0;
+					//std::cout << x << ':' << y << '\n';
+					for (int i = 0; i < 4; i++) {
+						const int divX = static_cast<int>(x / divFac + dx[i]);
+						const int divY = static_cast<int>(y / divFac + dy[i]);
+						//std::cout << divX << ':' << divY << '\n';
+						const vector2<double> diff = (allVectors[divY * (width / divFac) + divX] * divFac) - vector2<double>(x, y);
+						height += sqrt((diff.x * diff.x) + (diff.y * diff.y)) / (maxDiag * divFac);
+						//std::cout << "success\n";
+					}
+					allVertices[y * width + x].y = height / 4;
+					//std::cout << allVertices[y * width + x].y << '\n';
+				}
+			}
+		}
+
+		// blend the pixels
+		const int dx[9] = { -1,0,1,-1,0,1,-1,0,1 };
+		const int dy[9] = { -1,-1,-1,0,0,0,1,1,1 };
 		for (int y = 0; y < height; y++) {
 			for (int x = 0; x < width; x++) {
-				const int divX = static_cast<int>(x / divFac);
-				const int divY = static_cast<int>(y / divFac);
-				const vector2<double> diff = (allVectors[divY * (width / divFac) + divX] * divFac) - vector2<double>(x, y);
-				allVertices[y * width + x].y = sqrt((diff.x * diff.x) + (diff.y * diff.y))*pow(divFac,2);
+				double avHeight = 0;
+				for (int i = 0; i < 9; i++) {
+					const int toCheck = (y + dy[i]) * width + (x + dx[i]);
+					if (toCheck >= 0 && toCheck < allVertices.size()) {
+						avHeight += allVertices[toCheck].y;
+					}
+
+				}
+			}
+		}
+		for (auto& vert : allVertices) {
+			double avHeight = 0;
+			for (int i = 0; i < 9; i++) {
+
 			}
 		}
 	}
@@ -143,7 +182,7 @@ public:
 				Uint32* pixel = pixels + y * pitch + x;
 
 				// Modify the pixel value
-				const Uint8 v = allVertices[y * width + x].y;
+				const Uint8 v = 255 * allVertices[y * width + x].y;
 				Uint8 r = v;
 				Uint8 g = v;
 				Uint8 b = v;
