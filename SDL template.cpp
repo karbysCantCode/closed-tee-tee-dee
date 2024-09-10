@@ -6,6 +6,8 @@
 #include "TickRateMadeEasy.h"
 #include "isometricProjection.h"
 #include "Vector2.h"
+#include "PerlinNoise.h"
+
 
 int main(int argc, char* argv[])
 {
@@ -51,11 +53,7 @@ int main(int argc, char* argv[])
         }
     }
 
-    vertMap map(pow(2,7), pow(2, 6));
-    map.generateHeights(4);
-   // map.printRawData();
-    SDL_Texture* texture = map.generateTexture(renderer);
-    std::cout << "done!\n";
+    PerlinNoise(10, 4, 256, 256);
 
     bool running = true;
 
@@ -84,7 +82,7 @@ int main(int argc, char* argv[])
         
         // rendering stuff here
         {
-            SDL_RenderCopy(renderer, texture, nullptr, nullptr);
+            //SDL_RenderCopy(renderer, texture, nullptr, nullptr);
         }
         SDL_RenderPresent(renderer);
         TRME_sleepUntilNextTick(startTime, tickInterval);

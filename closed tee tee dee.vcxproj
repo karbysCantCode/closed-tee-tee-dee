@@ -133,10 +133,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="PerlinNoiseSorce.cpp" />
     <ClCompile Include="SDL template.cpp" />
+    <ClCompile Include="VertMapSource.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="isometricProjection.h" />
+    <ClInclude Include="PerlinNoise.h" />
     <ClInclude Include="TickRateMadeEasy.h" />
     <ClInclude Include="Vector2.h" />
   </ItemGroup>
