@@ -97,7 +97,7 @@ public:
 	void generateHeights(const int divFac) {
 		std::vector<vector2<double>> allVectors;
 		// leaving this at 2 works, at one it leaves a strange artifact in the bottom right, and at 0 it vector out of bounds
-		const int magicNumber = 2;
+		const int magicNumber = 3;
 		allVectors.resize((height / divFac + magicNumber) * (width / divFac + magicNumber) + (width / divFac + magicNumber));
 
 		for (int y = 0; y < height / divFac + magicNumber; y++) { // creat the vectors
@@ -110,7 +110,7 @@ public:
 		{
 			const int dx[4] = { 0,1,0,1 };
 			const int dy[4] = { 0,0,1,1 };
-			const double maxDiag = 2.82842712475; // sqrt(2*2+2*2)
+			const double maxDiag = sqrt(2*2+2*2); // sqrt(2*2+2*2)2.82842712475
 
 			for (int y = 0; y < height; y++) {
 				for (int x = 0; x < width; x++) {
@@ -165,14 +165,14 @@ public:
 				const double val = tempHeights[y * width + x];
 				if (val < 0)
 				{
-					allVertices[y * width + x].y = 0;
+					//allVertices[y * width + x].y = 0;
 				}
 				else if (val > 1) {
-					allVertices[y * width + x].y = 1;
-					std::cout << val << '\n';
+					//allVertices[y * width + x].y = 1;
+					std::cout << val << ":X" << x << ":Y" << y << '\n';
 				}
 				else {
-					allVertices[y * width + x].y = val;
+					//allVertices[y * width + x].y = val;
 				}
 				;
 			}
