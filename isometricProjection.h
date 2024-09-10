@@ -109,7 +109,7 @@ public:
 				const int divX = static_cast<int>(x / divFac);
 				const int divY = static_cast<int>(y / divFac);
 				const vector2<double> diff = (allVectors[divY * (width / divFac) + divX] * divFac) - vector2<double>(x, y);
-				allVertices[y * width + x].y = sqrt((diff.x * diff.x) + (diff.y * diff.y))*pow(divFac,2);
+				allVertices[y * width + x].y = sqrt((diff.x * diff.x) + (diff.y * diff.y))*pow(divFac,divFac/sqrt(divFac));
 			}
 		}
 	}

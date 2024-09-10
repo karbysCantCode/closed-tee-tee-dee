@@ -51,8 +51,8 @@ int main(int argc, char* argv[])
         }
     }
 
-    vertMap map(pow(2,5), pow(2, 4));
-    map.generateHeights(4);
+    vertMap map(pow(2,7), pow(2, 6));
+    map.generateHeights(32);
    // map.printRawData();
     SDL_Texture* texture = map.generateTexture(renderer);
     std::cout << "done!\n";
