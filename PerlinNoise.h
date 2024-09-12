@@ -2,6 +2,7 @@
 #include <vector>
 #include <random>
 #include <cmath>
+#include "SDL.h"
 
 #include "Vector2.h"
 
@@ -11,4 +12,8 @@
 
 double check(int x, int y, int seed);
 
+double perlinNoise(int x, int y, int frequency, int seed);
+
 int generateRandomInt(int min, int max, unsigned seed);
+
+SDL_Texture* generateTexture(SDL_Renderer* renderer, int width, int height, std::vector<double>& noise);

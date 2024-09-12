@@ -13,8 +13,10 @@ int main(int argc, char* argv[])
 {
     std::cout << "Hello World!\n";
 
-    int screenX = pow(2, 10);
-    int screenY = pow(2, 9);
+    const int length = pow(2,9);
+
+    int screenX = pow(2,10);
+    int screenY = pow(2, 10);
 
     SDL_Window* window;
     SDL_Renderer* renderer;
@@ -52,32 +54,21 @@ int main(int argc, char* argv[])
             return 1; // Exit with error code
         }
     }
+    std::vector<double> vert;
+ 
+    const int seed = 41;
+    const int frequency = 32;
 
-    long total = 0;
-    const int seed = 100;
-    //PerlinNoise(10, 4, 256, 256);
-    const int Size = 4096;
-
-    const int runs = 100;
-
-    for (size_t i = 0; i < runs; i++)
+    vert.resize(length * length + length);
+    for (size_t y = 0; y < length; y++)
     {
-        auto start = TRME_getTimePoint();
-        //std::map<double, int> freqCount;
-        for (size_t i = 0; i < Size * Size; i++)
+        for (size_t x = 0; x < length; x++)
         {
-
-            check(generateRandomInt(0, Size * Size, seed), generateRandomInt(0, Size * Size, seed), seed);
+            vert[y * length + x] = perlinNoise(x, y, frequency, seed);
         }
-
-        // for (const auto& e : freqCount)
-         //{
-        //     std::cout << e.first << ":" << e.second << '\n';
-         //}
-        total += std::chrono::duration_cast<std::chrono::milliseconds>(TRME_getTimepointDifference(start, TRME_getTimePoint())).count();
     }
 
-    std::cout << total / runs << '\n';
+    SDL_Texture* texture = generateTexture(renderer, length, length, vert);
 
     bool running = true;
 
@@ -106,7 +97,7 @@ int main(int argc, char* argv[])
         
         // rendering stuff here
         {
-            //SDL_RenderCopy(renderer, texture, nullptr, nullptr);
+            SDL_RenderCopy(renderer, texture, nullptr, nullptr);
         }
         SDL_RenderPresent(renderer);
         TRME_sleepUntilNextTick(startTime, tickInterval);
