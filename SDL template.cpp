@@ -79,8 +79,6 @@ int main(int argc, char* argv[])
 
     std::cout << total / runs << '\n';
 
-
-
     bool running = true;
 
     SDL_Event event;

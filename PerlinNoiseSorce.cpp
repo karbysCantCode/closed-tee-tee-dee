@@ -20,6 +20,8 @@ double dotProduct(double ax, double ay, double bx, double by) {
 	return (ax * bx) + (ay * by);
 }
 
+
+
  double hashPoint2D(int x, int y, uint32_t seed) {
     uint32_t hash = seed;
 
@@ -37,19 +39,20 @@ double dotProduct(double ax, double ay, double bx, double by) {
     const uint32_t hash = hashPoint2D(x, y, seed);
     const double X = -1.0 + static_cast<double>(hash) / std::numeric_limits<uint32_t>::max() * 2.0;  // Simplified multiplication by (1 - (-1))
     const bool isNegative = (hash >> 31) & 1;
-    const double Y = isNegative ? -std::sqrt(1.0 - X * X) : std::sqrt(1.0 - X * X); // Directly use isNegative for Y calculation
+    const double squareRoot = std::sqrt(1.0 - X * X);
+    const double Y = isNegative ? -squareRoot : squareRoot; // Directly use isNegative for Y calculation
     return vector2<double>{ X, Y };
 }
 
 double check(int x, int y, int seed) {
-    const auto vec = gradientVectorComponents(x, y, seed);
-    //std::cout << x << ':' << y << "::::" << vec.x << ':' << vec.y << '\n';
-    const double disSqaured = (vec.x * vec.x + vec.y * vec.y);
-    if (disSqaured > 0.9999f && disSqaured < 1.0001f) {
-        return 1;
-    }
-    else {
-        return 0;
-    }
-    return disSqaured;
-}
+     const auto vec = gradientVectorComponents(x, y, seed);
+     //std::cout << x << ':' << y << "::::" << vec.x << ':' << vec.y << '\n';
+     const double disSqaured = (vec.x * vec.x + vec.y * vec.y);
+     if (disSqaured > 0.9999f && disSqaured < 1.0001f) {
+         return 1;
+     }
+     else {
+         return 0;
+     }
+     return disSqaured;
+ }
