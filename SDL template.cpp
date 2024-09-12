@@ -53,7 +53,33 @@ int main(int argc, char* argv[])
         }
     }
 
-    PerlinNoise(10, 4, 256, 256);
+    long total = 0;
+    const int seed = 100;
+    //PerlinNoise(10, 4, 256, 256);
+    const int Size = 4096;
+
+    const int runs = 100;
+
+    for (size_t i = 0; i < runs; i++)
+    {
+        auto start = TRME_getTimePoint();
+        //std::map<double, int> freqCount;
+        for (size_t i = 0; i < Size * Size; i++)
+        {
+
+            check(generateRandomInt(0, Size * Size, seed), generateRandomInt(0, Size * Size, seed), seed);
+        }
+
+        // for (const auto& e : freqCount)
+         //{
+        //     std::cout << e.first << ":" << e.second << '\n';
+         //}
+        total += std::chrono::duration_cast<std::chrono::milliseconds>(TRME_getTimepointDifference(start, TRME_getTimePoint())).count();
+    }
+
+    std::cout << total / runs << '\n';
+
+
 
     bool running = true;
 

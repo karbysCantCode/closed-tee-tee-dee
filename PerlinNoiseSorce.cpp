@@ -1,52 +1,55 @@
 ﻿#include "PerlinNoise.h"
+/*
+double abs(double a) {
+	return (a < 0) ? -a : a;
+}
+*/
 
-double dotproduct(double ax, double ay, double bx, double by) {
-	double dx = bx - ax;
-	double dy = by - ay;
+int generateRandomInt(int min, int max, unsigned seed) {
+    // Initialize the Mersenne Twister random number generator with a seed
+    static std::mt19937 rng(seed);
 
-	return (dx * dx + dy * dy);
+    // Create a uniform integer distribution in the specified range
+    static std::uniform_int_distribution<int> dist(min, max);
+
+    // Generate and return the random number
+    return dist(rng);
 }
 
-std::vector<double> PerlinNoise(int seed, size_t frequency, size_t xSize, size_t ySize) {
-	// correct xsize and ysize to divide correctly with the frequency, the original will be saved for later so the output can be truncated to fit in the desired size
-	const size_t originalX = xSize;
-	const size_t originalY = ySize;
+double dotProduct(double ax, double ay, double bx, double by) {
+	return (ax * bx) + (ay * by);
+}
 
-	xSize += xSize % frequency;
-	ySize += ySize % frequency;
+ double hashPoint2D(int x, int y, uint32_t seed) {
+    uint32_t hash = seed;
 
+    // Use two prime numbers to mix the coordinates
+    hash ^= (x * 374761393) ^ (y * 668265263);
+    hash *= 0x85ebca6b;
+    hash ^= hash >> 13;
+    hash *= 0xc2b2ae35;
+    hash ^= hash >> 16;
 
-	// resize the vector to fit all the vertices
-	std::vector<double> output;
-	output.resize(ySize * xSize + xSize);
+    return hash;
+}
 
-	// generate the vectors
-	std::vector<vector2<double>> vector;
-	vector.resize(ySize * xSize / frequency + xSize);
-	std::mt19937 engine(seed);
-	std::uniform_real_distribution<double> randRadian(0, 1);
+ vector2<double> gradientVectorComponents(int x, int y, int seed) {
+    const uint32_t hash = hashPoint2D(x, y, seed);
+    const double X = -1.0 + static_cast<double>(hash) / std::numeric_limits<uint32_t>::max() * 2.0;  // Simplified multiplication by (1 - (-1))
+    const bool isNegative = (hash >> 31) & 1;
+    const double Y = isNegative ? -std::sqrt(1.0 - X * X) : std::sqrt(1.0 - X * X); // Directly use isNegative for Y calculation
+    return vector2<double>{ X, Y };
+}
 
-	for (size_t y = 0; y < ySize / frequency; y++) {
-		for (size_t x = 0; x < xSize / frequency; x++) {
-			const double rand = randRadian(engine);
-			vector[y * xSize / frequency + x] = vector2<double>((std::cos(rand) + x) * frequency, (std::sin(rand) + y) * frequency);
-		}
-	}
-
-	// calculate the.. something,, brightness?.. ¯\_(ツ)_/¯
-
-	// compare the rot of the point to corner, to the vector rot
-
-	const vector2<int> d[4] = { {0,0},{0,1},{1,0},{1,1} };
-	for (size_t y = 0; y < ySize; y++) {
-		for (size_t x = 0; x < xSize; x++) {
-			for (const auto& addVec : d) {
-				const vector2<double>& vec = vector[(y / frequency + addVec.y) * (xSize / frequency) + (x / frequency + addVec.x)];
-				double rotDiff = dotproduct(x, y, vec.x, vec.y);
-				std::cout << rotDiff << '\n';
-			}
-		}
-	}
-
-	return output;
+double check(int x, int y, int seed) {
+    const auto vec = gradientVectorComponents(x, y, seed);
+    //std::cout << x << ':' << y << "::::" << vec.x << ':' << vec.y << '\n';
+    const double disSqaured = (vec.x * vec.x + vec.y * vec.y);
+    if (disSqaured > 0.9999f && disSqaured < 1.0001f) {
+        return 1;
+    }
+    else {
+        return 0;
+    }
+    return disSqaured;
 }
