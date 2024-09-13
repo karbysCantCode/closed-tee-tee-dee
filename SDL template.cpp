@@ -56,15 +56,16 @@ int main(int argc, char* argv[])
     }
     std::vector<double> vert;
  
-    const int seed = 41;
-    const int frequency = 32;
+    const int seed = 42;
+    const int frequency = 90;
+    const double variance = 1;
 
     vert.resize(length * length + length);
     for (size_t y = 0; y < length; y++)
     {
         for (size_t x = 0; x < length; x++)
         {
-            vert[y * length + x] = perlinNoise(x, y, frequency, seed);
+            vert[y * length + x] = perlinNoise(x, y, variance, frequency, seed);
         }
     }
 

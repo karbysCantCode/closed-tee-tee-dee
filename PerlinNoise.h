@@ -6,14 +6,10 @@
 
 #include "Vector2.h"
 
-//double dotproduct(double ax, double ay, double bx, double by);
+uint32_t hashPoint(const int x, const int y, const int seed);
 
-//std::vector<double> PerlinNoise(int seed, size_t frequency, size_t xSize, size_t ySize);
+vector2<double> gradientVector(const int x, const int y, const int seed);
 
-double check(int x, int y, int seed);
-
-double perlinNoise(int x, int y, int frequency, int seed);
-
-int generateRandomInt(int min, int max, unsigned seed);
+double perlinNoise(const int x, const int y, const double finalVariance, const int frequency, const int seed);
 
 SDL_Texture* generateTexture(SDL_Renderer* renderer, int width, int height, std::vector<double>& noise);

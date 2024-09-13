@@ -1,41 +1,23 @@
 ﻿#include "PerlinNoise.h"
 
-double Abs(double a) {
-	return (a < 0) ? -a : a;
-}
-
-int generateRandomInt(int min, int max, unsigned seed) {
-    // Initialize the Mersenne Twister random number generator with a seed
-    static std::mt19937 rng(seed);
-
-    // Create a uniform integer distribution in the specified range
-    static std::uniform_int_distribution<int> dist(min, max);
-
-    // Generate and return the random number
-    return dist(rng);
-}
-
-double dotProduct(double ax, double ay, double bx, double by) {
-	return (ax * bx) + (ay * by);
-}
-
 double fade(double t) {
-    // Ensure t is in the range [0, 1]
-    if (t < 0.0) t = 0.0;
-    if (t > 1.0) t = 1.0;
-
-    // Compute the fade value
     return t * t * t * (t * (t * 6 - 15) + 10);
 }
 
-double lerp(double t, double P0, double P1) {
-    return P0 + t * (P1 - P0);
+double lerp(double t, double a, double b) {
+    return a + t * (b - a);
 }
 
- double hashPoint2D(int x, int y, uint32_t seed) {
+double dotProduct(vector2<double>& a, vector2<double>& b) {
+    return (a.x * b.x + a.y * b.y);
+}
+double dotProduct(const vector2<double>& a, const vector2<double>& b) {
+    return (a.x * b.x + a.y * b.y);
+}
+
+uint32_t hashPoint(const int x, const int y, const int seed) {
     uint32_t hash = seed;
 
-    // Use two prime numbers to mix the coordinates
     hash ^= (x * 374761393) ^ (y * 668265263);
     hash *= 0x85ebca6b;
     hash ^= hash >> 13;
@@ -45,62 +27,67 @@ double lerp(double t, double P0, double P1) {
     return hash;
 }
 
- vector2<double> gradientVectorComponents(int x, int y, int seed) {
-    const uint32_t hash = hashPoint2D(x, y, seed);
-    const double X = -1.0 + static_cast<double>(hash) / std::numeric_limits<uint32_t>::max() * 2.0;  // Simplified multiplication by (1 - (-1))
+vector2<double> gradientVector(const int x, const int y, const int seed) {
+    uint32_t hash = hashPoint(x, y, seed);
+
+    const double X = hash / (static_cast<double>(std::numeric_limits<uint32_t>::max() / 2)) - 1.0;
+    const double Y = std::sqrt(1.0 - X * X);
     const bool isNegative = (hash >> 31) & 1;
-    const double squareRoot = std::sqrt(1.0 - X * X);
-    const double Y = isNegative ? -squareRoot : squareRoot; // Directly use isNegative for Y calculation
-    return vector2<double>{ X, Y };
+
+    return vector2<double>(X, (isNegative ? -Y : Y));
 }
 
-double check(int x, int y, int seed) {
-     const auto vec = gradientVectorComponents(x, y, seed);
-     //std::cout << x << ':' << y << "::::" << vec.x << ':' << vec.y << '\n';
-     const double disSqaured = (vec.x * vec.x + vec.y * vec.y);
-     if (disSqaured > 0.9999f && disSqaured < 1.0001f) {
-         return 1;
-     }
-     else {
-         return 0;
-     }
-     return disSqaured;
- }
+double perlinNoise(const int x, const int y,const double finalVariance, const int frequency, const int seed) {
+    const vector2<int> gradientCell = { x / frequency, y / frequency };
 
-double perlinNoise(int x, int y, int frequency, int seed) {
-    // Find the grid cell coordinates
-    const int cellX = x / frequency;
-    const int cellY = y / frequency;
+    const vector2<double> GVA = gradientVector(gradientCell.x, gradientCell.y, seed);
+    const vector2<double> GVB = gradientVector(gradientCell.x+1, gradientCell.y, seed);
+    const vector2<double> GVC = gradientVector(gradientCell.x, gradientCell.y+1, seed);
+    const vector2<double> GVD = gradientVector(gradientCell.x+1, gradientCell.y+1, seed);
 
-    // Get gradient vectors for the four corners of the grid cell
-    vector2<double> TL = gradientVectorComponents(cellX, cellY, seed);
-    vector2<double> TR = gradientVectorComponents(cellX + 1, cellY, seed);
-    vector2<double> BL = gradientVectorComponents(cellX, cellY + 1, seed);
-    vector2<double> BR = gradientVectorComponents(cellX + 1, cellY + 1, seed);
+    const vector2<double> relativeCell = { x % frequency / static_cast<double>(frequency), y % frequency / static_cast<double>(frequency) };
 
-    // Calculate relative position of the point (x, y) within the cell
-    double relX = (x % frequency) / static_cast<double>(frequency); // Relative X within the cell [0, 1]
-    double relY = (y % frequency) / static_cast<double>(frequency); // Relative Y within the cell [0, 1]
+    const double DPA = dotProduct(relativeCell, GVA);                             
+    const double DPB = dotProduct(relativeCell - vector2<double>(1, 0), GVB);       
+    const double DPC = dotProduct(relativeCell - vector2<double>(0, 1), GVC);       
+    const double DPD = dotProduct(relativeCell - vector2<double>(1, 1), GVD);
 
-    // Fade the relative positions
-    double fadeX = fade(relX);
-    double fadeY = fade(relY);
+    const double u = fade(relativeCell.x);
+    const double v = fade(relativeCell.y);
+    
+    const double top = lerp(u, DPA, DPB);
+    const double bot = lerp(u, DPC, DPD);
 
-    // Calculate dot products of gradient vectors with the distance vectors
-    double DPTL = dotProduct(relX, relY, TL.x, TL.y); // Top-left corner
-    double DPTR = dotProduct(relX - 1, relY, TR.x, TR.y); // Top-right corner
-    double DPBL = dotProduct(relX, relY - 1, BL.x, BL.y); // Bottom-left corner
-    double DPBR = dotProduct(relX - 1, relY - 1, BR.x, BR.y); // Bottom-right corner
+    const double last = lerp(v, top, bot);
 
-    // Interpolate along the x axis
-    double interpTop = lerp(fadeX, DPTL, DPTR);
-    double interpBottom = lerp(fadeX, DPBL, DPBR);
+    return pow((last + 1.0) / 2.0, finalVariance);
+}
 
-    // Interpolate the final value along the y axis
-    double finalValue = lerp(fadeY, interpTop, interpBottom);
 
-    // Normalize the final value to the range [0, 1] (optional)
-    return pow((finalValue + 1.0) / 2.0,2.3);
+
+
+const SDL_Color snow = { 255,255,255,255 };
+const SDL_Color mountain = { 143,143,143,255 };
+const SDL_Color grass = { 51, 204, 51,255 };
+const SDL_Color sand = { 255,204,102,255 };
+const SDL_Color water = { 51,204,255,255 };
+
+const double maxHeight = 255;
+
+static SDL_Color getColor(const double height) {
+    if (height > 180) {
+        return snow;
+    }
+    else if (height > 160) {
+        return mountain;
+    }
+    else if (height > 120) {
+        return grass;
+    }
+    else if (height > 110) {
+        return sand;
+    }
+    return water;
 }
 
 SDL_Texture* generateTexture(SDL_Renderer* renderer, int width, int height, std::vector<double>& noise) {
@@ -120,11 +107,14 @@ SDL_Texture* generateTexture(SDL_Renderer* renderer, int width, int height, std:
         for (int x = 0; x < surface->w; ++x) {
             Uint32* pixel = pixels + y * pitch + x;
 
+            const double h = maxHeight * noise[y * width + x];
+            const SDL_Color color = getColor(h);
+
             // Modify the pixel value
-            const Uint8 v = 255 * noise[y * width + x];
-            Uint8 r = v;
-            Uint8 g = v;
-            Uint8 b = v;
+            
+            Uint8 r = color.r;
+            Uint8 g = color.g;
+            Uint8 b = color.b;
             Uint8 a = 255; // Opaque
 
             // Set the new pixel value
